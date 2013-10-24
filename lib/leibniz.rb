@@ -90,14 +90,27 @@ module Leibniz
     attr_reader :platforms
 
     def create_platform(spec)
-      distro = "#{spec['Operating System']}-#{spec['Version']}"
-      ipaddress = "10.2.3.#{@last_octet}"
-      @last_octet += 1
       platform = Hash.new
       platform[:name] = spec["Server Name"]
       platform[:driver_config] = Hash.new
-      platform[:driver_config][:box] = "opscode-#{distro}"
-      platform[:driver_config][:box_url] = "https://opscode-vm.s3.amazonaws.com/vagrant/opscode_#{distro}_provisionerless.box"
+
+      if spec.key? 'Box'
+        platform[:driver_config][:box] = spec['Box']
+        platform[:driver_config][:box_url] = spec.key? 'Box URL' ? spec['Box URL'] : ''
+      else
+        distro = "#{spec['Operating System']}-#{spec['Version']}"
+        platform[:driver_config][:box] = "opscode-#{distro}"
+        platform[:driver_config][:box_url] = "https://opscode-vm.s3.amazonaws.com/vagrant/opscode_#{distro}_provisionerless.box"
+      end
+
+      if spec.key? 'Ipaddress'
+        ipaddress = spec['Ipaddress']
+      else
+        ipaddress = "10.2.3.#{@last_octet}"
+        @last_octet += 1
+      end
+
+      platform[:driver_config][:ipaddress] = ipaddress
       platform[:driver_config][:network] = [["private_network", {:ip => ipaddress}]]
       platform[:driver_config][:require_chef_omnibus] = spec["Chef Version"] || true
       platform[:driver_config][:ipaddress] = ipaddress
